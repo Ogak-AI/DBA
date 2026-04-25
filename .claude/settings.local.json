@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "Bash(python -c ' *)",
+      "Bash(python main.py --source uniprot --n-total 500 --k 3 --seed 42)"
+    ]
+  }
+}

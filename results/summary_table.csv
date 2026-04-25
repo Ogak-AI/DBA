@@ -1,0 +1,3 @@
+Method,D1 Size,D2 Size,Coverage @ t=0.90 (%),Mean NN Similarity,Std NN Similarity,Mean Recon MSE,Baseline MSE,Normalised MSE,Redundancy Score
+K-mer,636,1293,0.94,0.252,0.1326,0.0,1e-06,0.772,0.1187
+Embedding,636,1293,0.79,0.4885,0.0822,0.0,1e-06,0.5431,0.2324
