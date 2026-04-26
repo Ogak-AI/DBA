@@ -168,7 +168,7 @@ DBA/
 ├── run_esm2.py                  ← standalone ESM-2 experiment
 ├── requirements.txt
 ├── README.md
-├── report_draft.md              ← full technical report with figures
+├── DBA_report.md              ← full technical report with figures
 ├── data/                        ← cached FASTA files
 ├── src/
 │   ├── data_loader.py           ← UniProt/NCBI download, cache, toxin query
@@ -189,4 +189,4 @@ DBA/
 - Analysis is purely statistical — no sequences are reconstructed or synthesised
 - Tool is designed for defensive audit use by screening programme designers
 
-Full dual-use discussion in Appendix A of `report_draft.md`.
+Full dual-use discussion in Appendix A of `DBA_report.md`.

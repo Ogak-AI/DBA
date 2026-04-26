@@ -226,6 +226,9 @@ def stage_represent(data: Dict[str, Any], args: argparse.Namespace) -> Dict[str,
         print(f"  ESM-2 embedding dim      : {reps['d1_esm'].shape[1]}  "
               f"({reps['d1_esm'].shape[0]} D1 + {reps['d2_esm'].shape[0]} D2 seqs)")
     print(f"  Representation time      : {t_rep:.1f}s")
+    # Persist D2 ESM-2 embeddings so stage_toxin can reuse them without re-encoding
+    if "d2_esm" in reps:
+        np.save("results/d2_esm.npy", reps["d2_esm"])
     return reps
 
 
@@ -382,6 +385,39 @@ def stage_toxin(data: Dict[str, Any], args: argparse.Namespace) -> Optional[Dict
         seed=args.seed,
     )
     res_t["ci"] = ci_t
+    print(f"  Toxin K-mer R = {ci_t['mean']:.4f}  [95% CI: {ci_t['ci_low']:.4f} – {ci_t['ci_high']:.4f}]")
+
+    # ESM-2 toxin: encode only toxin D1; reuse precomputed D2 embeddings if available
+    import os
+    if not args.no_esm2:
+        from src.esm_encoder import esm2_available, esm2_embed
+        d2_esm_path = "results/d2_esm.npy"
+        if esm2_available() and os.path.exists(d2_esm_path):
+            print("  Encoding toxin sequences with ESM-2 (reusing precomputed D2 embeddings) ...")
+            d2_esm = np.load(d2_esm_path)
+            d1_esm_t = esm2_embed(toxin_seqs)
+            if d1_esm_t is not None:
+                # Align: D2 ESM-2 subset size = min(len(d2_esm), len(d1_esm_t)*10)
+                n_d2 = min(len(d2_esm), len(d1_esm_t) * 10)
+                d2_esm_sub = d2_esm[:n_d2]
+                res_esm_t = ablation_information_retained(
+                    d1_esm_t, d2_esm_sub,
+                    threshold=args.threshold,
+                    k_recon=args.k_recon,
+                    seed=args.seed,
+                )
+                ci_esm_t = bootstrap_redundancy_ci(
+                    d1_esm_t, d2_esm_sub,
+                    n_bootstrap=min(args.n_bootstrap, 50),
+                    threshold=args.threshold,
+                    seed=args.seed,
+                )
+                print(f"  Toxin ESM-2 R = {ci_esm_t['mean']:.4f}  "
+                      f"[95% CI: {ci_esm_t['ci_low']:.4f} – {ci_esm_t['ci_high']:.4f}]")
+                print(f"  Toxin ESM-2 Coverage@{args.threshold:.2f}: "
+                      f"{res_esm_t['nn_result']['coverage_pct']:.2f}%")
+                res_t["esm_ci"] = ci_esm_t
+                res_t["esm_res"] = res_esm_t
 
     rand_ci = args._random_ci_cache
     p = save_toxin_comparison(
@@ -393,7 +429,6 @@ def stage_toxin(data: Dict[str, Any], args: argparse.Namespace) -> Optional[Dict
         toxin_ci_high  = ci_t["ci_high"],
         method_label   = "K-mer",
     )
-    print(f"  Toxin R = {ci_t['mean']:.4f}  [95% CI: {ci_t['ci_low']:.4f} – {ci_t['ci_high']:.4f}]")
     print(f"  Saved: {p}")
     return res_t
 
