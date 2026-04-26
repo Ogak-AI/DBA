@@ -171,6 +171,8 @@ The metric correctly spans the expected range. The LOW score (0.144) is non-zero
 
 At τ = 0.90, zero k-mer sequences and 0.06% of embedded sequences have a near-identical match in D2. The k-mer null model R = 0.010 (vs real R = 0.064) confirms the signal is genuine: real D2 contains +0.054 above-chance coverage. The narrow bootstrap CIs ([0.061, 0.067] for k-mer; [0.205, 0.213] for embedding) confirm stable estimates at n=1,698.
 
+*This means: at the sequence-identity level, cluster-aware restrictions create a genuine compositional barrier — no restricted sequence has a near-identical BLAST match in D2. However, as §4.4 shows, this barrier does not hold in the functional similarity space that protein language models operate in.*
+
 ---
 
 ### 4.3 Coverage curves across thresholds
@@ -227,6 +229,8 @@ Toxin proteins score 59% *lower* than random Swiss-Prot proteins — a **biosecu
 
 A delta of 0.001 across a 10× size difference confirms the score is not driven by outlier sequences and generalises within the D1 distribution.
 
+*This means: the redundancy score is a stable property of the restriction category, not a statistical artefact of which specific sequences happen to be in D1. Practitioners can trust a DBA score computed on a representative sample.*
+
 ---
 
 ### 4.7 Size sensitivity
@@ -265,7 +269,17 @@ At τ = 0.90, k-mer screening achieves 0% coverage — no restricted sequence ha
 
 **The toxin finding is cautiously positive.** Toxin proteins are 59% more isolated than random Swiss-Prot proteins at the sequence level (R = 0.027 vs 0.064). This suggests evolutionary constraints push toxin families into compositionally distinct regions of sequence space, making sequence-identity screening relatively effective for this category. The caveat — that the ESM-2 multiplier for toxin proteins is unknown — means this result should be verified with protein language model encoders before being used to relax screening requirements.
 
-### 5.2 How to use DBA in practice
+### 5.2 Biological interpretation of the representation gap
+
+The 7.2× difference between k-mer and ESM-2 redundancy scores is not a computational artefact — it reflects a fundamental biological reality about the relationship between sequence identity and protein function.
+
+**K-mer frequencies measure amino acid composition.** A k-mer vector records the frequency of every 3-amino-acid window in the sequence. Two sequences with similar k-mer profiles have similar local residue statistics — roughly corresponding to what BLAST measures as percent sequence identity. This is the similarity metric most current screening pipelines use.
+
+**ESM-2 embeddings capture fold-level and functional similarity.** ESM-2 was pre-trained on 250 million protein sequences to predict masked amino acids from context. In doing so, it learned to encode evolutionary relationships, secondary structure tendencies, active site geometry, and functional motifs — none of which are directly captured by k-mer statistics. Two sequences can have completely different k-mer profiles (< 30% sequence identity) yet fold into the same structure and perform the same biochemical function. This is well-established in structural biology: convergent evolution frequently produces functional homologues with negligible sequence identity.
+
+**The gap is exactly the attack surface.** An AI adversary designing a functional analogue of a restricted sequence does not need sequence identity — they need functional similarity. Protein language models excel at identifying and generating sequences in the same functional neighbourhood as a target, even when sequence-level screening would classify them as unrelated. The 7.2× ratio — ESM-2 R = 0.459 vs k-mer R = 0.064 — quantifies how much of this functional neighbourhood remains accessible in D2 after a cluster-aware sequence-level restriction. **Sixty-seven percent of restricted sequences have a near-perfect ESM-2 match in D2.** That match is the scaffold from which a language model adversary would begin.
+
+### 5.3 How to use DBA in practice
 
 ```
 ─────────────────────────────────────────────────────────────────────
@@ -301,7 +315,7 @@ Step 5 — Document the gap
 ─────────────────────────────────────────────────────────────────────
 ```
 
-### 5.3 Limitations
+### 5.4 Limitations
 
 **ESM-2 evaluated on a subset.** ESM-2 was evaluated on 150 D1 and 150 D2 sequences (CPU compute constraint: 54 seconds per 300 sequences). The bootstrap CI [0.415, 0.501] reflects this sampling uncertainty. Full evaluation on all 1,698 D1 and 3,146 D2 sequences would require either GPU acceleration or substantial CPU time.
 
