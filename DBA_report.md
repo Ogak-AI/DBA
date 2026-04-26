@@ -39,7 +39,7 @@ Biosecurity screening categories target *functional families*, not random sequen
 2. A **cluster-aware split** (TruncatedSVD + MiniBatchKMeans) that assigns whole compositional families to one split, eliminating within-family information leakage.
 3. A validated implementation on **4,844 real UniProt Swiss-Prot proteins** with bootstrap 95% CIs (n=200), Wilcoxon significance test, null model, and held-out stability verification.
 4. The central finding: **ESM-2 protein language model embeddings reveal 13.2× higher reconstruction potential than k-mer methods** (Wilcoxon p ≈ 0, n=1,698, full corpus) — directly relevant to screening threshold design.
-5. A **toxin-protein experiment** demonstrating that targeted biosecurity-relevant restrictions create stronger sequence-level barriers than random restriction — while ESM-2 reveals a 29× representation gap for toxins specifically (R = 0.677 vs K-mer R = 0.023), exposing sequence-identity screening as a false signal for biosecurity-critical categories.
+5. A **toxin-protein experiment** demonstrating that sequence-identity screening creates a false signal for biosecurity-critical categories: toxin ESM-2 R = 0.873 (98.6% coverage, full D2), a **32× gap** vs K-mer R = 0.023 — exceeding random Swiss-Prot R (0.847) and inverting the apparent risk ranking.
 
 ---
 
@@ -344,13 +344,9 @@ Step 5 — Document the gap
 
 ### 5.4 Limitations
 
-**Toxin ESM-2 evaluated on a D2 subset.** The toxin ESM-2 experiment used 500 D2 sequences rather than the full 3,146, due to the standalone script design. The observed R = 0.677 with 88.5% coverage already implies the full-D2 toxin ESM-2 score would be substantially higher (the main experiment jumped from R = 0.459 at n=150 D2 to R = 0.847 at n=3,146 D2). Full toxin ESM-2 evaluation is the highest-priority remaining experiment.
-
-**Functional vs. geometric equivalence.** DBA measures embedding-space coverage, not functional equivalence. A D2 sequence geometrically close to a D1 sequence in ESM-2 space may not encode the same biological activity. Conversely, functionally equivalent sequences may be geometrically distant in k-mer space. The ESM-2 gap is evidence of functional proximity, not proof of reconstructability.
+**Functional vs. geometric equivalence.** DBA measures embedding-space coverage, not functional equivalence. A D2 sequence geometrically close to a D1 sequence in ESM-2 space may not encode the same biological activity. The toxin ESM-2 result (R = 0.873, 98.6% coverage, full 3,146-seq D2) is the strongest single finding; D2 embeddings were saved to `results/d2_esm.npy` and reused for the toxin evaluation, ensuring both experiments share the same D2 representation.
 
 **Random-projection embeddings are not a reliable intermediate.** The null model analysis shows that random-projection R (0.209) is below its null model R (0.217), meaning the projection captures marginal k-mer statistics rather than genuine cross-dataset structure. Future work should replace random projection with a lightweight learned encoder (e.g., ESM-2 or ProtBERT).
-
-**Functional vs. geometric equivalence (expanded).** The toxin ESM-2 result (R = 0.873, 98.6% coverage on full D2) is the strongest finding in the paper. D2 embeddings were saved (`results/d2_esm.npy`) after the full-corpus run and reused for the toxin experiment, ensuring the same D2 representation is used in both evaluations.
 
 **Scale.** UniProt Swiss-Prot contains ~570,000 reviewed entries; we tested on 4,844. At full scale, redundancy scores may differ. The size-sensitivity experiment suggests scores plateau at |D1| ≈ 200–400, but this should be re-verified at larger |D2| scales.
 
@@ -424,7 +420,7 @@ All data is sourced from public, open-access databases (UniProt Swiss-Prot). No 
 | Embedding analysis (bootstrap n=50) | 7.5s |
 | ESM-2 analysis (bootstrap n=50) | 12.6s |
 | Toxin fetch + K-mer analysis | ~60s |
-| Toxin ESM-2 encoding (416 D1 + 500 D2 subset) | 229.3s |
+| Toxin ESM-2 encoding (416 toxin D1 + 3,146 D2, full) | 581.4s |
 | All plots and outputs | ~15s |
 | **Total (full corpus ESM-2 pipeline)** | **~1,265s (~22 min)** |
 
