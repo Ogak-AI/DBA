@@ -6,7 +6,9 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "Bash(python main.py --n-total 5000 --split-mode random --n-bootstrap 50 --seed 42 --no-esm2)",
-      "Bash(tee results/run_random_split_log.txt)"
+      "Bash(tee results/run_random_split_log.txt)",
+      "Bash(curl -s \"https://api.github.com/repos/Ogak-AI/DBA/commits?per_page=6\")",
+      "Bash(python -c \"import sys,json; [print\\(c['sha'][:7], c['commit']['message'][:60]\\) for c in json.load\\(sys.stdin\\)]\")"
     ]
   }
 }
