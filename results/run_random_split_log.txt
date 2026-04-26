@@ -1,0 +1,5 @@
+12:24:26  INFO     Loading from cache: data\uniprot_5000_7ab4123f.fasta
+12:24:26  INFO     Cache hit: 4844 sequences after filtering
+12:24:26  INFO       [timer] download: 0.1s
+12:24:26  INFO     Split: D1=1598 sequences, D2=3246 sequences (33%/67%)
+12:24:33  INFO       [timer] represent: 1.9s
