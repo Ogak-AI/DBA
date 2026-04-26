@@ -1,0 +1,10 @@
+.claude/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+*.npy
+data/*.fasta
