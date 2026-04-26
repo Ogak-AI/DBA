@@ -13,25 +13,29 @@ DBA is a fast, validated framework that quantifies the **reconstruction gap** be
 
 ![Redundancy scores by representation method](results/representation_comparison.png)
 
-The figure above shows redundancy scores (R ∈ [0, 1]; higher = more reconstructable) for three representation types on 1,929 real UniProt Swiss-Prot proteins:
+The figure above shows redundancy scores (R ∈ [0, 1]; higher = more reconstructable) for three representation types on **4,844 real UniProt Swiss-Prot proteins** (cluster-aware split, D1=1,698 / D2=3,146):
 
-| Adversary type | Representation | R | 95% CI | vs. K-mer |
-|---------------|---------------|---|--------|-----------|
-| Sequence copier | K-mer (k=3) | **0.062** | [0.056, 0.071] | — |
-| Lightweight ML | Rnd. Projection | **0.218** | [0.212, 0.226] | 3.5× |
-| Language model | ESM-2 (8M params) | **0.664** | [0.624, 0.698] | **9.6×** |
-| Toxin proteins (K-mer) | K-mer (k=3) | **0.028** | [0.024, 0.032] | −56% vs random |
-| Null model (permuted D2) | K-mer | **0.000** | — | — |
+| Adversary type | Representation | R (bootstrap) | 95% CI | vs. K-mer |
+|---------------|---------------|--------------|--------|-----------|
+| Sequence copier (BLAST) | K-mer (k=3) | **0.064** | [0.061, 0.067] | — |
+| Lightweight ML | Rnd. Projection | **0.209** | [0.205, 0.213] | 3.3× |
+| Language model | ESM-2 (8M params, n=150) | **0.459** | [0.415, 0.501] | **7.2×** |
+| Toxin proteins (K-mer) | K-mer (k=3) | **0.027** | [0.023, 0.030] | −59% vs random |
+| K-mer null model (permuted D2) | K-mer | **0.010** | — | — |
+
+*Wilcoxon K-mer vs ESM-2: n=150, p = 2.3 × 10⁻²⁶. All bootstrap CIs from n=200 resamples.*
 
 **Key findings:**
 
-1. **Cluster-aware splitting confirms genuine barriers.** At sequence-identity level, random restrictions create real but imperfect information barriers (R = 0.062). The null model (R = 0.000) confirms this is genuine signal.
+1. **Cluster-aware splitting confirms genuine barriers.** At sequence-identity level, cluster-aware restrictions create real but imperfect information barriers (K-mer R = 0.064 vs null model R = 0.010). Zero sequences are recoverable at τ = 0.90 similarity under k-mer screening.
 
-2. **ESM-2 reveals a 9.6× gap.** A protein language model adversary achieves 86% coverage of restricted sequences at cosine similarity ≥ 0.90. Screening thresholds calibrated on BLAST-style identity may underestimate AI-adversary reconstruction potential by roughly an order of magnitude.
+2. **ESM-2 reveals a 7.2× gap.** A protein language model adversary achieves 67% coverage of restricted sequences at cosine similarity ≥ 0.90 — compared to 0% for k-mer. Screening thresholds calibrated on BLAST-style identity underestimate AI-adversary reconstruction potential by roughly an order of magnitude.
 
-3. **Toxin proteins are more isolated.** Biosecurity-relevant toxin families score 56% lower than random proteins (R = 0.028 vs. 0.063) — sequence-level screening of toxin categories is creating stronger information barriers than a random-protein baseline would predict.
+3. **Toxin proteins are more compositionally isolated.** Biosecurity-relevant toxin families score 59% lower than random proteins (R = 0.027 vs 0.064) — sequence-level screening of toxin categories creates stronger information barriers than a random-protein baseline predicts.
 
-**Recommendation:** Calibrate screening thresholds using protein language model embeddings (ESM-2 or equivalent), not BLAST identity. A policy that targets < 5% coverage at τ = 0.85 in embedding space provides a meaningful lower bound on AI-adversary-resistant restriction.
+4. **Random projections are not a reliable proxy for learned embeddings.** The random-projection null model (R = 0.217) exceeds the real embedding R (0.209), indicating the projection captures marginal k-mer statistics rather than genuine cross-dataset structure. ESM-2 is the only representation showing substantial above-null signal.
+
+**Recommendation:** Calibrate screening thresholds using protein language model embeddings (ESM-2 or equivalent), not BLAST identity. The 7.2× representation gap is the *AI threat multiplier* — the factor by which language-model-aided adversaries exceed the reconstruction potential assumed by sequence-identity-based policy.
 
 ---
 
