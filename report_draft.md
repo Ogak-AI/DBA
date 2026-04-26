@@ -255,6 +255,24 @@ Scores plateau after |D1| ≈ 188–376, confirming that practitioners can run D
 
 ---
 
+### 4.8 Cluster-aware vs random split: methodological justification
+
+To confirm that the cluster-aware split is not just a stylistic choice but a materially different methodological decision, we ran the full pipeline with a random split (seed=42, n-bootstrap=50) on the same 4,844-sequence corpus.
+
+| Split method | D1 | D2 | K-mer R | 95% CI | Embedding R | 95% CI | K-mer Coverage@0.90 |
+|---|---|---|---|---|---|---|---|
+| **Random** | 1,598 | 3,246 | 0.105 | [0.097, 0.114] | 0.249 | [0.243, 0.256] | 0.69% |
+| **Cluster-aware** | 1,698 | 3,146 | **0.064** | [0.061, 0.067] | **0.209** | [0.205, 0.213] | **0.00%** |
+| Difference | — | — | −0.041 (−39%) | — | −0.040 (−16%) | — | −0.69 pp |
+
+The random split inflates K-mer R by **64%** relative to cluster-aware (0.105 vs 0.064). The explanation is straightforward: with a random split, protein families are partitioned across D1 and D2. A restricted sequence has near-identical family members in D2, creating artificially high nearest-neighbour similarity. The cluster-aware split assigns whole k-mer clusters to one side, so no family members straddle the boundary — D1 sequences have no close compositional relatives in D2.
+
+This matters for biosecurity evaluation. Real screening categories (toxin proteins, viral envelope proteins, Select Agent sequences) are *functional families* — all members are restricted together. A random split does not model this; a cluster-aware split does. The 39% inflation from random splitting would lead a practitioner to overestimate reconstruction risk, potentially triggering unnecessarily tight thresholds. More importantly, it would obscure the genuine finding: that the functional similarity gap (ESM-2 R = 0.459) is the real threat, not sequence-identity leakage.
+
+*This means: the choice of split method is not an implementation detail — it determines whether you are measuring within-family leakage (random) or genuine cross-category reconstruction potential (cluster-aware). DBA uses cluster-aware splitting by default.*
+
+---
+
 ## 5. Discussion
 
 ### 5.1 What the results mean for screening policy
