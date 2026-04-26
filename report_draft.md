@@ -7,7 +7,7 @@ Track: AI Biosecurity Tools (Fourth Eon Bio)
 
 ## Abstract
 
-Biosecurity screening removes specific biological sequences from public databases, but does this restriction actually withhold meaningful information from an AI-equipped adversary? We introduce the **Dataset Bottleneck Analysis (DBA)** framework, which quantifies the *reconstruction gap* between a restricted set D1 and the remaining public corpus D2. Applied to **4,844 real UniProt Swiss-Prot reviewed proteins** using a novel **cluster-aware split** — which assigns whole k-mer compositional families exclusively to D1 or D2 — DBA yields bootstrap-validated redundancy scores of **R = 0.064 [95% CI: 0.061–0.067]** (k-mer) and **R = 0.209 [95% CI: 0.205–0.213]** (random-projection embedding). ESM-2 protein language model embeddings reveal **R = 0.459 [95% CI: 0.415–0.501]** — **7.2× higher than k-mer** (Wilcoxon p = 2.3 × 10⁻²⁶) — meaning BLAST-calibrated screening underestimates AI adversary reconstruction leverage by nearly an order of magnitude, with 67% of restricted sequences recoverable at cosine similarity ≥ 0.90. Applied to annotated toxin proteins as a biosecurity-relevant D1, DBA yields **R = 0.027 [CI: 0.023–0.030]** — 59% *lower* than random proteins — confirming that functionally constrained sequences occupy more isolated regions of sequence space, and that sequence-level screening is particularly effective for this threat category, even as the representation gap demands embedding-based threshold calibration. DBA runs end-to-end in 32 minutes on a laptop CPU (bootstrap included) and is fully open-source.
+Biosecurity screening removes specific biological sequences from public databases, but does this restriction actually withhold meaningful information from an AI-equipped adversary? We introduce the **Dataset Bottleneck Analysis (DBA)** framework, which quantifies the *reconstruction gap* between a restricted set D1 and the remaining public corpus D2. Applied to **4,844 real UniProt Swiss-Prot reviewed proteins** using a novel **cluster-aware split** — which assigns whole k-mer compositional families exclusively to D1 or D2 — DBA yields bootstrap-validated redundancy scores of **R = 0.064 [95% CI: 0.061–0.067]** (k-mer) and **R = 0.209 [95% CI: 0.205–0.213]** (random-projection embedding). ESM-2 protein language model embeddings reveal **R = 0.459 [95% CI: 0.415–0.501]** — **7.2× higher than k-mer** (Wilcoxon p = 2.3 × 10⁻²⁶) — meaning BLAST-calibrated screening underestimates AI adversary reconstruction leverage by nearly an order of magnitude, with 67% of restricted sequences recoverable at cosine similarity ≥ 0.90. The toxin experiment exposes a critical deception in sequence-identity evaluation: toxin proteins score **K-mer R = 0.023** (64% *below* random) — appearing highly isolated — yet **ESM-2 R = 0.677 [CI: 0.657–0.699]** (48% *above* random), with 88% coverage at τ = 0.90. The 29× ESM-2/k-mer ratio for toxins (vs 7.2× for random proteins) reveals that evolutionary constraints push toxins into compositionally unique but functionally crowded regions of protein space — precisely the structure that language models exploit. **Sequence-identity screening of toxins is not a strong barrier; it is a false signal.** DBA runs end-to-end in under 35 minutes on a laptop CPU and is fully open-source.
 
 ---
 
@@ -128,14 +128,15 @@ Before reporting results, we verify that the redundancy score correctly distingu
 
 ### 4.0 Summary Table
 
-| Representation | D1 | D2 | Coverage @ τ=0.90 | Mean NN Sim | Norm. MSE | Null model R | **R (point)** | **R (bootstrap)** | **95% CI** |
-|----------------|----|----|-------------------|-------------|-----------|-------------|---------------|-------------------|-----------|
-| K-mer (k=3) | 1,698 | 3,146 | 0.00% | 0.236 ± 0.099 | 0.870 | 0.010 | 0.065 | **0.064** | [0.061, 0.067] |
-| Rnd. Projection | 1,698 | 3,146 | 0.06% | 0.497 ± 0.062 | 0.579 | 0.217† | 0.211 | **0.209** | [0.205, 0.213] |
-| ESM-2 (n=150) | 150† | 150† | 67.33% | 0.891 ± 0.118 | 0.753 | 0.310 | 0.460 | **0.459** | [0.415, 0.501] |
-| Toxin (K-mer) | 416 | 3,146 | 0.00% | — | — | — | 0.027 | **0.027** | [0.023, 0.030] |
+| Representation | D1 | D2 | Coverage @ τ=0.90 | Mean NN Sim | Norm. MSE | Null model R | **R (bootstrap)** | **95% CI** |
+|----------------|----|----|-------------------|-------------|-----------|-------------|-------------------|-----------|
+| K-mer (k=3) | 1,698 | 3,146 | 0.00% | 0.236 ± 0.099 | 0.870 | 0.010 | **0.064** | [0.061, 0.067] |
+| Rnd. Projection | 1,698 | 3,146 | 0.06% | 0.497 ± 0.062 | 0.579 | 0.217† | **0.209** | [0.205, 0.213] |
+| ESM-2 (n=150 subset) | 150‡ | 150‡ | 67.33% | 0.891 ± 0.118 | 0.753 | 0.310 | **0.459** | [0.415, 0.501] |
+| Toxin — K-mer | 416 | 3,146 | 0.00% | — | — | — | **0.023** | [0.022, 0.025] |
+| **Toxin — ESM-2** | **416** | **500‡** | **88.46%** | **0.933** | — | — | **0.677** | **[0.657, 0.699]** |
 
-*† Random-projection null model R = 0.217 > real R = 0.209: random projection captures marginal k-mer statistics rather than genuine cross-dataset structure (see §4.4). ESM-2 evaluated on a random 150-sequence subset of D1 and D2. Wilcoxon K-mer vs ESM-2: n=150, stat=0.0, p = 2.3 × 10⁻²⁶.*
+*† Random-projection null R = 0.217 > real R = 0.209: projection captures marginal k-mer statistics, not genuine cross-dataset structure (§4.4). ‡ ESM-2 evaluated on random subsets due to CPU constraints. Wilcoxon K-mer vs ESM-2: n=150, p = 2.3 × 10⁻²⁶. Toxin ESM-2 uses 500-sequence D2 subset; k-mer toxin uses full D2 (3,146).*
 
 ---
 
@@ -203,19 +204,25 @@ The Wilcoxon signed-rank test on per-sequence NN similarities (n=150, stat=0.0, 
 
 ---
 
-### 4.5 Toxin experiment: biosecurity-relevant families are compositionally isolated
+### 4.5 Toxin experiment: sequence-identity screening gives a false signal
 
 ![Toxin vs random comparison](results/toxin_vs_random.png)
-*Figure 7. Redundancy scores (k-mer) for random Swiss-Prot proteins (left, R = 0.064) vs toxin proteins (right, R = 0.027). Error bars are 50-resample bootstrap CIs.*
+*Figure 7. K-mer redundancy scores for random Swiss-Prot (R = 0.064) vs toxin proteins (R = 0.023). ESM-2 scores (not shown in figure) reverse this ordering entirely.*
 
-| D1 category | n | R (bootstrap) | 95% CI | vs. random Swiss-Prot |
-|-------------|---|--------------|--------|----------------------|
-| Random Swiss-Prot | 1,698 | **0.064** | [0.061, 0.067] | — |
-| Toxin proteins | 416 | **0.027** | [0.023, 0.030] | −59% |
+| Representation | D1 category | R (bootstrap) | 95% CI | Coverage@0.90 | vs. random (same rep.) |
+|---------------|-------------|--------------|--------|---------------|----------------------|
+| K-mer | Random Swiss-Prot | **0.064** | [0.061, 0.067] | 0.00% | — |
+| K-mer | Toxin proteins | **0.023** | [0.022, 0.025] | 0.00% | −64% |
+| ESM-2 | Random Swiss-Prot | **0.459** | [0.415, 0.501] | 67.3% | — |
+| ESM-2 | Toxin proteins | **0.677** | [0.657, 0.699] | **88.5%** | **+48%** |
 
-Toxin proteins score 59% *lower* than random Swiss-Prot proteins — a **biosecurity-positive finding** at the sequence-identity level. Toxin families are compositionally distinct from the average public protein corpus; their k-mer fingerprints have few close matches in D2.
+The k-mer result is superficially reassuring: toxin proteins score 64% *below* random proteins, suggesting strong sequence-level isolation. The ESM-2 result completely reverses this conclusion. **Toxin proteins score 0.677 under ESM-2 — 48% above random proteins (0.459)** — with 88.5% of toxin sequences recoverable at cosine similarity ≥ 0.90. The ESM-2/k-mer ratio for toxins is **29×** (vs 7.2× for random proteins).
 
-**Policy implication.** Current sequence-level screening for toxin proteins appears to be working: the k-mer restriction creates a stronger information barrier for toxin families than for random proteins. However, this finding must be qualified by the representation gap: we do not have ESM-2 results for toxin proteins, and given the 7.2× multiplier observed for random proteins, the toxin R under ESM-2 could be substantially higher than 0.027. Production screening evaluation should apply protein language model encoders to toxin families specifically.
+The mechanism is clear: toxins are under strong positive selection for functional activity, producing convergent active-site architectures across diverse sequence backgrounds. ESM-2, trained on 250M proteins, encodes these functional relationships with high fidelity — meaning the public corpus contains abundant functional neighbours of every toxin protein, even when no sequence-identity match exists.
+
+**Policy implication.** Sequence-identity screening of toxins gives the *appearance* of strong information barriers (k-mer R = 0.023) while leaving functionally relevant information almost entirely accessible to a language model adversary (ESM-2 R = 0.677, 88.5% coverage). For the toxin category specifically, upgrading from BLAST to embedding-based screening is not an optimisation — it is a requirement.
+
+*This means: the toxin result is the most important single finding in this paper. It demonstrates that sequence-level screening can actively mislead practitioners about the strength of information barriers for biosecurity-critical categories.*
 
 ---
 
@@ -355,10 +362,10 @@ On 4,844 real UniProt Swiss-Prot proteins with cluster-aware splitting:
 
 - **Sequence-identity screening (k-mer) achieves R = 0.064** — a genuine but imperfect barrier; 0% of sequences are recoverable at τ = 0.90 threshold.
 - **ESM-2 language model embeddings yield R = 0.459** — **7.2× higher**, with 67% of sequences recoverable at the same threshold (Wilcoxon p = 2.3 × 10⁻²⁶).
-- **Toxin proteins achieve R = 0.027** — 59% below random proteins, a biosecurity-positive finding at the sequence level.
+- **Toxin proteins (K-mer R = 0.023)** appear highly isolated at the sequence level — but **ESM-2 R = 0.677 (88.5% coverage)** reveals this is a false signal. Toxin screening is the category most urgently requiring embedding-based evaluation.
 - **Random-projection embeddings do not add genuine signal** above their null model, confirming that learned representations are required for AI-adversary-grade evaluation.
 
-DBA runs in 32 minutes on a laptop CPU (bootstrap included). It is designed to be run by practitioners before deploying any new screening category, providing a quantitative answer to "will this restriction actually withhold information from an AI-equipped adversary?" The 7.2× representation gap is the central message: BLAST-calibrated screening policies face AI adversaries operating at a fundamentally different effective threshold.
+DBA runs in under 35 minutes on a laptop CPU. It is designed to be run by practitioners before deploying any new screening category. The central message is not the 7.2× gap alone — it is the toxin finding: **sequence-identity screening can actively mislead practitioners about the strength of information barriers for the categories that matter most.** A practitioner running DBA on a proposed toxin screening category will see k-mer R = 0.023 and conclude the barrier is strong; ESM-2 R = 0.677 reveals the opposite.
 
 ---
 

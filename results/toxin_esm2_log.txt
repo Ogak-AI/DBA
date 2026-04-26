@@ -1,0 +1,59 @@
+13:30:45  INFO     Loading ESM-2 (facebook/esm2_t6_8M_UR50D) on CPU ...
+13:30:47  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+13:30:47  INFO     HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/esm2_t6_8M_UR50D/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/tokenizer_config.json "HTTP/1.1 200 OK"
+13:30:47  INFO     HTTP Request: GET https://huggingface.co/api/models/facebook/esm2_t6_8M_UR50D/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+13:30:47  INFO     HTTP Request: GET https://huggingface.co/api/models/facebook/esm2_t6_8M_UR50D/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+13:30:47  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+13:30:47  INFO     HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/esm2_t6_8M_UR50D/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/config.json "HTTP/1.1 200 OK"
+13:30:48  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+13:30:48  WARNING  Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/102 [00:00<?, ?it/s]Loading weights: 100%|##########| 102/102 [00:00<00:00, 2949.95it/s]
+[transformers] [1mEsmModel LOAD REPORT[0m from: facebook/esm2_t6_8M_UR50D
+Key                       | Status     | 
+--------------------------+------------+-
+lm_head.dense.weight      | UNEXPECTED | 
+lm_head.layer_norm.weight | UNEXPECTED | 
+lm_head.bias              | UNEXPECTED | 
+lm_head.dense.bias        | UNEXPECTED | 
+lm_head.layer_norm.bias   | UNEXPECTED | 
+pooler.dense.bias         | MISSING    | 
+pooler.dense.weight       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+13:30:48  INFO     ESM-2 loaded  —  hidden dim 320, 6 layers.
+13:30:48  INFO     Loading from cache: data\uniprot_5000_7ab4123f.fasta
+13:30:48  INFO     Cache hit: 4844 sequences after filtering
+13:30:52  INFO     Cluster-aware split: 150 clusters on 4844 sequences ...
+13:31:01  INFO     Cluster split done: D1=1698 seqs, D2=3146 seqs
+13:31:01  INFO     Fetching toxin sequences from UniProt ...
+13:31:01  INFO     Loading from cache: data\uniprot_500_13118b7f.fasta
+13:31:01  INFO     Cache hit: 416 sequences after filtering
+13:32:27  INFO       ESM-2: 200 / 416 sequences encoded
+13:33:15  INFO       ESM-2: 400 / 416 sequences encoded
+13:33:19  INFO       ESM-2: 416 / 416 sequences encoded
+13:34:11  INFO       ESM-2: 200 / 500 sequences encoded
+13:35:05  INFO       ESM-2: 400 / 500 sequences encoded
+13:35:31  INFO       ESM-2: 500 / 500 sequences encoded
+
+Loading corpus ...
+Cluster-aware split to get D2 ...
+Fetching toxin sequences ...
+  Toxin D1: 416 sequences
+  Swiss-Prot D2: 3146 sequences (using subset of 500)
+
+Encoding 416 toxin sequences with ESM-2 ...
+Encoding 500 D2 sequences with ESM-2 ...
+ESM-2 encoding: 229.3s
+
+============================================================
+  Toxin K-mer  R = 0.0233  [95% CI: 0.0217 – 0.0251]
+  Toxin ESM-2  R = 0.6765  [95% CI: 0.6570 – 0.6991]
+  Toxin ESM-2 Coverage@0.90: 88.46%
+  Toxin ESM-2 Mean NN sim: 0.9326
+  Ratio ESM-2/K-mer: 29.09x
+============================================================
+
+Saved: results/toxin_esm2_results.txt
