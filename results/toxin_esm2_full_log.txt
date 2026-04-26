@@ -1,0 +1,73 @@
+14:02:27  INFO     Loading ESM-2 (facebook/esm2_t6_8M_UR50D) on CPU ...
+14:02:28  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+14:02:28  WARNING  Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+14:02:28  INFO     HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/esm2_t6_8M_UR50D/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/tokenizer_config.json "HTTP/1.1 200 OK"
+14:02:28  INFO     HTTP Request: GET https://huggingface.co/api/models/facebook/esm2_t6_8M_UR50D/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+14:02:28  INFO     HTTP Request: GET https://huggingface.co/api/models/facebook/esm2_t6_8M_UR50D/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+14:02:29  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+14:02:29  INFO     HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/esm2_t6_8M_UR50D/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/config.json "HTTP/1.1 200 OK"
+14:02:29  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+Loading weights:   0%|          | 0/102 [00:00<?, ?it/s]Loading weights: 100%|##########| 102/102 [00:00<00:00, 7145.80it/s]
+[transformers] [1mEsmModel LOAD REPORT[0m from: facebook/esm2_t6_8M_UR50D
+Key                       | Status     | 
+--------------------------+------------+-
+lm_head.bias              | UNEXPECTED | 
+lm_head.layer_norm.bias   | UNEXPECTED | 
+lm_head.layer_norm.weight | UNEXPECTED | 
+lm_head.dense.bias        | UNEXPECTED | 
+lm_head.dense.weight      | UNEXPECTED | 
+pooler.dense.weight       | MISSING    | 
+pooler.dense.bias         | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+14:02:29  INFO     ESM-2 loaded  —  hidden dim 320, 6 layers.
+14:02:29  INFO     Loading from cache: data\uniprot_5000_7ab4123f.fasta
+14:02:29  INFO     Cache hit: 4844 sequences after filtering
+14:02:31  INFO     Cluster-aware split: 150 clusters on 4844 sequences ...
+14:02:34  INFO     Cluster split done: D1=1698 seqs, D2=3146 seqs
+14:02:34  INFO     Fetching toxin sequences from UniProt ...
+14:02:34  INFO     Loading from cache: data\uniprot_500_13118b7f.fasta
+14:02:34  INFO     Cache hit: 416 sequences after filtering
+14:03:56  INFO       ESM-2: 200 / 416 sequences encoded
+14:04:30  INFO       ESM-2: 400 / 416 sequences encoded
+14:04:33  INFO       ESM-2: 416 / 416 sequences encoded
+14:05:08  INFO       ESM-2: 200 / 3146 sequences encoded
+14:05:43  INFO       ESM-2: 400 / 3146 sequences encoded
+14:06:18  INFO       ESM-2: 600 / 3146 sequences encoded
+14:06:49  INFO       ESM-2: 800 / 3146 sequences encoded
+14:07:26  INFO       ESM-2: 1000 / 3146 sequences encoded
+14:08:02  INFO       ESM-2: 1200 / 3146 sequences encoded
+14:08:36  INFO       ESM-2: 1400 / 3146 sequences encoded
+14:09:12  INFO       ESM-2: 1600 / 3146 sequences encoded
+14:09:48  INFO       ESM-2: 1800 / 3146 sequences encoded
+14:10:22  INFO       ESM-2: 2000 / 3146 sequences encoded
+14:10:52  INFO       ESM-2: 2200 / 3146 sequences encoded
+14:11:22  INFO       ESM-2: 2400 / 3146 sequences encoded
+14:11:53  INFO       ESM-2: 2600 / 3146 sequences encoded
+14:12:23  INFO       ESM-2: 2800 / 3146 sequences encoded
+14:12:53  INFO       ESM-2: 3000 / 3146 sequences encoded
+14:13:09  INFO       ESM-2: 3146 / 3146 sequences encoded
+
+Loading corpus ...
+Cluster-aware split to get D2 ...
+Fetching toxin sequences ...
+  Toxin D1: 416 sequences
+  Swiss-Prot D2: 3146 sequences (using full D2)
+
+Encoding 416 toxin sequences with ESM-2 ...
+Encoding 3146 D2 sequences with ESM-2 ...
+Saved D2 embeddings to results/d2_esm.npy for future reuse.
+ESM-2 encoding: 581.4s
+
+============================================================
+  Toxin K-mer  R = 0.0270  [95% CI: 0.0228 – 0.0309]
+  Toxin ESM-2  R = 0.8732  [95% CI: 0.8585 – 0.8826]
+  Toxin ESM-2 Coverage@0.90: 98.56%
+  Toxin ESM-2 Mean NN sim: 0.9702
+  Ratio ESM-2/K-mer: 32.34x
+============================================================
+
+Saved: results/toxin_esm2_results.txt

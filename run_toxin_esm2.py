@@ -50,7 +50,9 @@ def main():
     toxin_records = fetch_toxin_sequences(n=500)
     toxin_seqs = [s for _, s in toxin_records]
     print(f"  Toxin D1: {len(toxin_seqs)} sequences")
-    print(f"  Swiss-Prot D2: {len(d2_seqs)} sequences (using subset of {args.d2_subset})")
+    n_d2_actual = min(args.d2_subset, len(d2_seqs))
+    d2_label = "full D2" if n_d2_actual >= len(d2_seqs) else f"subset of {n_d2_actual}"
+    print(f"  Swiss-Prot D2: {len(d2_seqs)} sequences (using {d2_label})")
 
     # K-mer baseline
     toxin_kmer = kmer_vectorise(toxin_seqs, alphabet, k=3)
@@ -60,14 +62,25 @@ def main():
                                        n_bootstrap=args.n_bootstrap, seed=args.seed)
 
     # ESM-2
-    n_d2_esm = args.d2_subset
+    import os
+    n_d2_esm = min(args.d2_subset, len(d2_seqs))
     d2_for_esm = d2_seqs[:n_d2_esm]
+    d2_cache = "results/d2_esm.npy"
 
     print(f"\nEncoding {len(toxin_seqs)} toxin sequences with ESM-2 ...")
     t0 = time.time()
     d1_esm = esm2_embed(toxin_seqs)
-    print(f"Encoding {n_d2_esm} D2 sequences with ESM-2 ...")
-    d2_esm = esm2_embed(d2_for_esm)
+
+    if n_d2_esm >= len(d2_seqs) and os.path.exists(d2_cache):
+        print(f"Loading precomputed D2 ESM-2 embeddings from {d2_cache} ...")
+        d2_esm = np.load(d2_cache)
+    else:
+        print(f"Encoding {n_d2_esm} D2 sequences with ESM-2 ...")
+        d2_esm = esm2_embed(d2_for_esm)
+        if d2_esm is not None and n_d2_esm >= len(d2_seqs):
+            np.save(d2_cache, d2_esm)
+            print(f"Saved D2 embeddings to {d2_cache} for future reuse.")
+
     t_enc = time.time() - t0
     print(f"ESM-2 encoding: {t_enc:.1f}s")
 
@@ -93,7 +106,7 @@ def main():
     Path("results").mkdir(exist_ok=True)
     with open("results/toxin_esm2_results.txt", "w") as f:
         f.write(f"Toxin D1: {len(toxin_seqs)} sequences\n")
-        f.write(f"D2 ESM-2 subset: {n_d2_esm} sequences\n")
+        f.write(f"D2 ESM-2: {n_d2_esm} sequences ({'full D2' if n_d2_esm >= len(d2_seqs) else 'subset'})\n")
         f.write(f"Encoding time: {t_enc:.1f}s\n")
         f.write(f"Toxin K-mer R: {ci_km['mean']:.4f}  "
                 f"[95% CI: {ci_km['ci_low']:.4f} – {ci_km['ci_high']:.4f}]\n")

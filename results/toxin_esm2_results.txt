@@ -1,8 +1,8 @@
 Toxin D1: 416 sequences
-D2 ESM-2 subset: 500 sequences
-Encoding time: 229.3s
-Toxin K-mer R: 0.0233  [95% CI: 0.0217 – 0.0251]
-Toxin ESM-2 R: 0.6765  [95% CI: 0.6570 – 0.6991]
-Toxin ESM-2 Coverage@0.90: 88.46%
-Toxin ESM-2 Mean NN sim: 0.9326
-Ratio ESM-2/K-mer: 29.09x
+D2 ESM-2: 3146 sequences (full D2)
+Encoding time: 581.4s
+Toxin K-mer R: 0.0270  [95% CI: 0.0228 – 0.0309]
+Toxin ESM-2 R: 0.8732  [95% CI: 0.8585 – 0.8826]
+Toxin ESM-2 Coverage@0.90: 98.56%
+Toxin ESM-2 Mean NN sim: 0.9702
+Ratio ESM-2/K-mer: 32.34x

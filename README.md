@@ -19,23 +19,24 @@ The figure above shows redundancy scores (R ∈ [0, 1]; higher = more reconstruc
 |---------------|---------------|--------------|--------|-----------|
 | Sequence copier (BLAST) | K-mer (k=3) | **0.064** | [0.061, 0.067] | — |
 | Lightweight ML | Rnd. Projection | **0.209** | [0.205, 0.213] | 3.3× |
-| Language model | ESM-2 (8M params, n=150) | **0.459** | [0.415, 0.501] | **7.2×** |
-| Toxin proteins (K-mer) | K-mer (k=3) | **0.027** | [0.023, 0.030] | −59% vs random |
+| Language model | ESM-2 (8M, full corpus) | **0.847** | [0.838, 0.855] | **13.2×** |
+| Toxin proteins (K-mer) | K-mer (k=3) | **0.027** | [0.023, 0.031] | −59% vs random |
+| Toxin proteins (ESM-2, full D2) | ESM-2 | **0.873** | [0.859, 0.883] | **32×** vs own K-mer |
 | K-mer null model (permuted D2) | K-mer | **0.010** | — | — |
 
-*Wilcoxon K-mer vs ESM-2: n=150, p = 2.3 × 10⁻²⁶. All bootstrap CIs from n=200 resamples.*
+*Wilcoxon K-mer vs ESM-2: n=1,698, p ≈ 0. All bootstrap CIs from n=50 resamples.*
 
 **Key findings:**
 
 1. **Cluster-aware splitting confirms genuine barriers.** At sequence-identity level, cluster-aware restrictions create real but imperfect information barriers (K-mer R = 0.064 vs null model R = 0.010). Zero sequences are recoverable at τ = 0.90 similarity under k-mer screening.
 
-2. **ESM-2 reveals a 7.2× gap.** A protein language model adversary achieves 67% coverage of restricted sequences at cosine similarity ≥ 0.90 — compared to 0% for k-mer. Screening thresholds calibrated on BLAST-style identity underestimate AI-adversary reconstruction potential by roughly an order of magnitude.
+2. **ESM-2 reveals a 13.2× gap.** A protein language model adversary achieves **95.5% coverage** of restricted sequences at cosine similarity ≥ 0.90 — compared to 0% for k-mer. Screening thresholds calibrated on BLAST-style identity underestimate AI-adversary reconstruction potential by more than an order of magnitude.
 
-3. **Toxin proteins are more compositionally isolated.** Biosecurity-relevant toxin families score 59% lower than random proteins (R = 0.027 vs 0.064) — sequence-level screening of toxin categories creates stronger information barriers than a random-protein baseline predicts.
+3. **Toxin proteins expose a false signal.** K-mer screening makes toxins appear 59% *less* risky than random proteins (R = 0.027 vs 0.064). ESM-2 completely reverses this: **toxin ESM-2 R = 0.873** (98.6% coverage) *exceeds* random Swiss-Prot R (0.847). Sequence-identity screening of toxins actively misleads practitioners about the strength of information barriers.
 
 4. **Random projections are not a reliable proxy for learned embeddings.** The random-projection null model (R = 0.217) exceeds the real embedding R (0.209), indicating the projection captures marginal k-mer statistics rather than genuine cross-dataset structure. ESM-2 is the only representation showing substantial above-null signal.
 
-**Recommendation:** Calibrate screening thresholds using protein language model embeddings (ESM-2 or equivalent), not BLAST identity. The 7.2× representation gap is the *AI threat multiplier* — the factor by which language-model-aided adversaries exceed the reconstruction potential assumed by sequence-identity-based policy.
+**Recommendation:** Calibrate screening thresholds using protein language model embeddings (ESM-2 or equivalent), not BLAST identity. The **13.2× representation gap** is the *AI threat multiplier*. For toxin categories specifically, embedding-based evaluation is a requirement — not an optimisation — because sequence-identity screening inverts the true risk ranking (32× ESM-2/K-mer ratio for toxins vs 13.2× for random proteins).
 
 ---
 
