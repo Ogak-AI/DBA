@@ -259,6 +259,7 @@ def fetch_sequences(
     min_len: int = 50,
     max_len: int = 2000,
     force_download: bool = False,
+    uniprot_query: str = "reviewed:true",
 ) -> List[Tuple[str, str]]:
     """
     Fetch *n* real biological sequences from public databases.
@@ -270,6 +271,7 @@ def fetch_sequences(
     min_len        : minimum accepted sequence length
     max_len        : maximum accepted sequence length
     force_download : ignore local cache and re-download
+    uniprot_query  : UniProt query string (default: all reviewed Swiss-Prot)
 
     Returns
     -------
@@ -279,8 +281,10 @@ def fetch_sequences(
     ------
     RuntimeError if all sources fail.
     """
-    cache_key = f"{source}_{n}"
-    cache_file = _cache_path(source if source != "auto" else "uniprot", n)
+    import hashlib
+    query_tag = hashlib.md5(uniprot_query.encode()).hexdigest()[:8]
+    cache_src = source if source != "auto" else "uniprot"
+    cache_file = CACHE_DIR / f"{cache_src}_{n}_{query_tag}.fasta"
 
     # ── Cache hit ────────────────────────────────────────────────────────────
     if not force_download and cache_file.exists():
@@ -296,21 +300,16 @@ def fetch_sequences(
     records: List[Tuple[str, str]] = []
     errors: List[str] = []
 
-    sources_to_try = []
-    if source == "auto":
-        sources_to_try = ["uniprot", "ncbi"]
-    else:
-        sources_to_try = [source]
+    sources_to_try = ["uniprot", "ncbi"] if source == "auto" else [source]
 
     for src in sources_to_try:
         try:
             if src == "uniprot":
-                records = _fetch_uniprot(n)
+                records = _fetch_uniprot(n, query=uniprot_query)
             elif src == "ncbi":
                 records = _fetch_ncbi(n)
 
             if records:
-                cache_file = _cache_path(src, n)
                 _write_fasta_cache(cache_file, records)
                 break
             else:
@@ -330,7 +329,7 @@ def fetch_sequences(
     before = len(records)
     records = _filter_sequences(records, min_len, max_len)
     logger.info(
-        "Quality filter: %d → %d sequences (len %d–%d)",
+        "Quality filter: %d -> %d sequences (len %d-%d)",
         before, len(records), min_len, max_len,
     )
 
@@ -341,6 +340,30 @@ def fetch_sequences(
         )
 
     return records
+
+
+def fetch_toxin_sequences(
+    n: int = 500,
+    min_len: int = 50,
+    max_len: int = 2000,
+    force_download: bool = False,
+) -> List[Tuple[str, str]]:
+    """
+    Fetch reviewed UniProt proteins annotated with keyword 'toxin'.
+
+    These are publicly curated, non-pathogen-specific entries used to
+    represent a biosecurity-relevant functional category (D1 in the
+    toxin experiment).
+    """
+    logger.info("Fetching toxin sequences from UniProt ...")
+    return fetch_sequences(
+        n=n,
+        source="uniprot",
+        min_len=min_len,
+        max_len=max_len,
+        force_download=force_download,
+        uniprot_query="reviewed:true AND keyword:toxin",
+    )
 
 
 def split_datasets(

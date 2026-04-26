@@ -1,0 +1,8 @@
+ESM-2 subset: 100 D1 + 100 D2 sequences
+Encoding time: 30.6s
+K-mer R: 0.0692  [95% CI: 0.0622 – 0.0770]
+ESM-2  R: 0.6643  [95% CI: 0.6243 – 0.6984]
+Ratio ESM-2/k-mer: 9.60x
+ESM-2 Coverage@0.90: 86.00%
+ESM-2 Mean NN sim: 0.9413
+Wilcoxon p: 3.90e-18

@@ -1,0 +1,34 @@
+11:04:38  INFO     Loading ESM-2 (facebook/esm2_t6_8M_UR50D) on CPU ...
+11:04:39  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+11:04:39  INFO     HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/esm2_t6_8M_UR50D/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/tokenizer_config.json "HTTP/1.1 200 OK"
+11:04:39  INFO     HTTP Request: GET https://huggingface.co/api/models/facebook/esm2_t6_8M_UR50D/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+11:04:39  INFO     HTTP Request: GET https://huggingface.co/api/models/facebook/esm2_t6_8M_UR50D/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+11:04:39  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+11:04:39  INFO     HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/esm2_t6_8M_UR50D/c731040fcd8d73dceaa04b0a8e6329b345b0f5df/config.json "HTTP/1.1 200 OK"
+11:04:40  INFO     HTTP Request: HEAD https://huggingface.co/facebook/esm2_t6_8M_UR50D/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+11:04:40  INFO     HTTP Request: GET https://huggingface.co/api/models/facebook/esm2_t6_8M_UR50D/xet-read-token/c731040fcd8d73dceaa04b0a8e6329b345b0f5df "HTTP/1.1 200 OK"
+C:\Users\USER\AppData\Local\Programs\Python\Python314\Lib\site-packages\huggingface_hub\file_download.py:129: UserWarning: `huggingface_hub` cache-system uses symlinks by default to efficiently store duplicated files but your machine does not support them in C:\Users\USER\.cache\huggingface\hub\models--facebook--esm2_t6_8M_UR50D. Caching files will still work but in a degraded version that might require more space on your disk. This warning can be disabled by setting the `HF_HUB_DISABLE_SYMLINKS_WARNING` environment variable. For more details, see https://huggingface.co/docs/huggingface_hub/how-to-cache#limitations.
+To support symlinks on Windows, you either need to activate Developer Mode or to run Python as an administrator. In order to activate developer mode, see this article: https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development
+  warnings.warn(message)
+Loading weights:   0%|          | 0/102 [00:00<?, ?it/s]Loading weights: 100%|##########| 102/102 [00:00<00:00, 8316.85it/s]
+[transformers] [1mEsmModel LOAD REPORT[0m from: facebook/esm2_t6_8M_UR50D
+Key                       | Status     | 
+--------------------------+------------+-
+lm_head.layer_norm.bias   | UNEXPECTED | 
+lm_head.layer_norm.weight | UNEXPECTED | 
+lm_head.bias              | UNEXPECTED | 
+lm_head.dense.bias        | UNEXPECTED | 
+lm_head.dense.weight      | UNEXPECTED | 
+pooler.dense.bias         | MISSING    | 
+pooler.dense.weight       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+11:04:50  INFO     ESM-2 loaded  —  hidden dim 320, 6 layers.
+11:04:50  INFO     Loading from cache: data\uniprot_2000_7ab4123f.fasta
+11:04:50  INFO     Cache hit: 1929 sequences after filtering
+11:04:51  INFO     Cluster-aware split: 150 clusters on 1929 sequences ...
+11:04:54  INFO     Cluster split done: D1=637 seqs, D2=1292 seqs
+11:05:09  INFO       ESM-2: 100 / 100 sequences encoded
+11:05:24  INFO       ESM-2: 100 / 100 sequences encoded

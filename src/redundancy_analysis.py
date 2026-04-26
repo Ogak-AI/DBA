@@ -20,10 +20,9 @@ All functions accept pre-computed numpy matrices so they are representation-
 agnostic (k-mer vectors or embeddings).
 """
 
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, List
 
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 
 
@@ -219,3 +218,125 @@ def ablation_information_retained(
         "redundancy_score": float(redundancy_score),
         "norm_mse": float(norm_mse),
     }
+
+
+# ---------------------------------------------------------------------------
+# Bootstrap confidence intervals
+# ---------------------------------------------------------------------------
+
+def bootstrap_redundancy_ci(
+    d1_X: np.ndarray,
+    d2_X: np.ndarray,
+    n_bootstrap: int = 200,
+    threshold: float = 0.90,
+    k_recon: int = 5,
+    seed: int = 42,
+    ci: float = 0.95,
+) -> Dict[str, Any]:
+    """
+    Bootstrap 95 % CI for the redundancy score by resampling rows of D1.
+
+    Parameters
+    ----------
+    d1_X        : feature matrix for D1  (n1, d)
+    d2_X        : feature matrix for D2  (n2, d)
+    n_bootstrap : number of bootstrap resamples
+    ci          : confidence level (default 0.95)
+
+    Returns
+    -------
+    dict with mean, std, ci_low, ci_high, n_bootstrap
+    """
+    rng = np.random.default_rng(seed)
+    n1 = len(d1_X)
+    scores: List[float] = []
+    for b in range(n_bootstrap):
+        idx = rng.integers(0, n1, size=n1)
+        res = ablation_information_retained(
+            d1_X[idx], d2_X,
+            threshold=threshold,
+            k_recon=k_recon,
+            seed=int(rng.integers(0, 2**31)),
+        )
+        scores.append(res["redundancy_score"])
+
+    arr = np.array(scores)
+    alpha = (1.0 - ci) / 2.0
+    return {
+        "mean": float(arr.mean()),
+        "std": float(arr.std()),
+        "ci_low": float(np.quantile(arr, alpha)),
+        "ci_high": float(np.quantile(arr, 1.0 - alpha)),
+        "n_bootstrap": n_bootstrap,
+        "ci_level": ci,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Null-model comparison
+# ---------------------------------------------------------------------------
+
+def null_model_redundancy(
+    d1_X: np.ndarray,
+    d2_X: np.ndarray,
+    threshold: float = 0.90,
+    k_recon: int = 5,
+    seed: int = 0,
+) -> Dict[str, Any]:
+    """
+    Compute redundancy against a null D2 (column-wise permutation).
+
+    Destroys biological co-occurrence signal while preserving each feature's
+    marginal distribution.  If real D2 scores significantly higher than the
+    null, the metric is capturing genuine biological structure.
+    """
+    rng = np.random.default_rng(seed)
+    d2_null = d2_X.copy()
+    for col in range(d2_null.shape[1]):
+        rng.shuffle(d2_null[:, col])
+    return ablation_information_retained(
+        d1_X, d2_null,
+        threshold=threshold,
+        k_recon=k_recon,
+        seed=seed,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Statistical significance — Wilcoxon signed-rank test
+# ---------------------------------------------------------------------------
+
+def wilcoxon_test(
+    scores_a: np.ndarray,
+    scores_b: np.ndarray,
+) -> Dict[str, Any]:
+    """
+    Paired Wilcoxon signed-rank test between two per-sequence score arrays.
+
+    Suitable for comparing per-sequence NN similarity from two representation
+    methods (e.g. k-mer vs. ESM-2) without assuming normality.
+
+    Returns
+    -------
+    dict with keys: statistic, pvalue, available, note (if scipy missing)
+    """
+    if len(scores_a) != len(scores_b):
+        n = min(len(scores_a), len(scores_b))
+        scores_a = scores_a[:n]
+        scores_b = scores_b[:n]
+    try:
+        from scipy.stats import wilcoxon
+        stat, pvalue = wilcoxon(scores_a, scores_b)
+        return {
+            "statistic": float(stat),
+            "pvalue": float(pvalue),
+            "available": True,
+            "n_pairs": len(scores_a),
+        }
+    except ImportError:
+        return {
+            "statistic": None,
+            "pvalue": None,
+            "available": False,
+            "note": "pip install scipy to enable Wilcoxon test",
+        }

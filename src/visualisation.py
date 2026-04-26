@@ -233,6 +233,110 @@ def save_size_sensitivity_plot(
     return out
 
 
+def save_representation_comparison(
+    results: Dict[str, Dict],
+    filename: str = "representation_comparison",
+) -> Path:
+    """
+    Grouped bar chart: redundancy score (mean ± 95 % CI) per representation method.
+
+    results : dict keyed by method label, values have 'ci' sub-dict from
+              bootstrap_redundancy_ci() and 'redundancy_score' float.
+              e.g. {"K-mer": {..., "ci": {...}}, "Embedding": ..., "ESM-2": ...}
+    """
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    out = RESULTS_DIR / f"{filename}.png"
+
+    labels = list(results.keys())
+    means  = [results[l].get("ci", {}).get("mean", results[l].get("redundancy_score", 0)) * 100
+              for l in labels]
+    ci_low  = [results[l].get("ci", {}).get("ci_low",  means[i] / 100) * 100 for i, l in enumerate(labels)]
+    ci_high = [results[l].get("ci", {}).get("ci_high", means[i] / 100) * 100 for i, l in enumerate(labels)]
+    yerr_lo = [m - lo for m, lo in zip(means, ci_low)]
+    yerr_hi = [hi - m  for m, hi in zip(means, ci_high)]
+
+    colours = [PALETTE["primary"], PALETTE["secondary"], PALETTE["accent"]][:len(labels)]
+
+    fig, ax = plt.subplots(figsize=(7, 4.5), facecolor=PALETTE["bg"])
+    _style_axis(ax)
+
+    x = np.arange(len(labels))
+    bars = ax.bar(x, means, color=colours, width=0.5,
+                  edgecolor=PALETTE["bg"], alpha=0.9,
+                  yerr=[yerr_lo, yerr_hi],
+                  error_kw=dict(ecolor=PALETTE["text"], capsize=5, lw=1.5))
+
+    for bar, m in zip(bars, means):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + max(yerr_hi) + 1,
+                f"{m:.1f}%", ha="center", va="bottom",
+                fontsize=11, fontweight="bold", color=PALETTE["text"])
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=11)
+    ax.set_ylabel("Redundancy Score (%)", fontsize=11)
+    ax.set_ylim(0, min(115, max(means) * 1.5 + 15))
+    ax.set_title("Redundancy Score by Representation Method\n(mean ± 95% CI, n=200 bootstrap resamples)",
+                 fontsize=11, pad=10)
+
+    plt.tight_layout()
+    fig.savefig(out, dpi=150)
+    plt.close(fig)
+    return out
+
+
+def save_toxin_comparison(
+    random_mean: float,
+    random_ci_low: float,
+    random_ci_high: float,
+    toxin_mean: float,
+    toxin_ci_low: float,
+    toxin_ci_high: float,
+    method_label: str = "K-mer",
+    filename: str = "toxin_vs_random",
+) -> Path:
+    """
+    Side-by-side bar chart comparing redundancy for random proteins vs toxins.
+    """
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    out = RESULTS_DIR / f"{filename}.png"
+
+    categories = ["Random proteins\n(baseline)", "Toxin proteins\n(biosecurity-relevant)"]
+    means  = [random_mean * 100, toxin_mean * 100]
+    ci_low  = [random_ci_low * 100, toxin_ci_low * 100]
+    ci_high = [random_ci_high * 100, toxin_ci_high * 100]
+    yerr_lo = [m - lo for m, lo in zip(means, ci_low)]
+    yerr_hi = [hi - m  for m, hi in zip(means, ci_high)]
+    colours = [PALETTE["primary"], PALETTE["accent"]]
+
+    fig, ax = plt.subplots(figsize=(6.5, 4.5), facecolor=PALETTE["bg"])
+    _style_axis(ax)
+
+    bars = ax.bar([0, 1], means, color=colours, width=0.45,
+                  edgecolor=PALETTE["bg"], alpha=0.9,
+                  yerr=[yerr_lo, yerr_hi],
+                  error_kw=dict(ecolor=PALETTE["text"], capsize=6, lw=1.5))
+
+    for bar, m in zip(bars, means):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + max(yerr_hi) + 1.5,
+                f"{m:.1f}%", ha="center", va="bottom",
+                fontsize=12, fontweight="bold", color=PALETTE["text"])
+
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(categories, fontsize=10)
+    ax.set_ylabel("Redundancy Score (%)", fontsize=11)
+    ax.set_ylim(0, min(115, max(means) * 1.8 + 15))
+    ax.set_title(
+        f"Toxin vs Random Protein Redundancy  [{method_label}]\n"
+        "(Higher = screened sequences more recoverable from public corpus)",
+        fontsize=10, pad=10,
+    )
+
+    plt.tight_layout()
+    fig.savefig(out, dpi=150)
+    plt.close(fig)
+    return out
+
+
 def save_validation_plot(
     score_high: float,
     score_low: float,

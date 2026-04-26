@@ -1,85 +1,37 @@
-# Dataset Bottleneck Analysis
+# Dataset Bottleneck Analysis (DBA)
 
-> **Biosecurity Hackathon Prototype**  
-> Testing the hypothesis: *"Removing a specific biological dataset does NOT significantly reduce accessible biological knowledge, because equivalent information can be reconstructed from other public sources."*
+> **AIxBio Hackathon — April 24–26, 2026**  
+> *Can an AI adversary reconstruct restricted biological sequences from the remaining public corpus?*
 
----
+DBA is a fast, validated framework that quantifies the **reconstruction gap** between a restricted sequence set (D1) and a public reference corpus (D2). It answers the question every biosecurity screening programme needs to ask before deployment:
 
-## Overview
-
-This pipeline quantifies **knowledge redundancy** between two biological sequence datasets, split from a single real-world download:
-
-| Symbol | Role | Description |
-|--------|------|-------------|
-| **D1** | Primary (restricted) | The dataset we simulate "removing" |
-| **D2** | Reference | The remaining public sequences |
-
-It answers: **"If we restrict access to D1, how much biological capability is actually lost?"**
+> "Does removing these sequences actually withhold meaningful information from an AI-equipped adversary — or can they recover it from what's left?"
 
 ---
 
-## Data Sources (Real, Public)
+## What this means for biosecurity
 
-| Priority | Source | URL | Content |
-|----------|--------|-----|---------|
-| 1st | **UniProt Swiss-Prot** | `rest.uniprot.org` | Reviewed protein records |
-| 2nd | **NCBI Protein** | `eutils.ncbi.nlm.nih.gov` | RefSeq protein records |
+![Redundancy scores by representation method](results/representation_comparison.png)
 
-- Downloaded via official REST APIs — no synthetic or mock data
-- Sequences cached in `data/` after first download (skip re-download on reruns)
-- Randomly split into D1 / D2 using a fixed seed for reproducibility
+The figure above shows redundancy scores (R ∈ [0, 1]; higher = more reconstructable) for three representation types on 1,929 real UniProt Swiss-Prot proteins:
 
----
+| Adversary type | Representation | R | 95% CI | vs. K-mer |
+|---------------|---------------|---|--------|-----------|
+| Sequence copier | K-mer (k=3) | **0.062** | [0.056, 0.071] | — |
+| Lightweight ML | Rnd. Projection | **0.218** | [0.212, 0.226] | 3.5× |
+| Language model | ESM-2 (8M params) | **0.664** | [0.624, 0.698] | **9.6×** |
+| Toxin proteins (K-mer) | K-mer (k=3) | **0.028** | [0.024, 0.032] | −56% vs random |
+| Null model (permuted D2) | K-mer | **0.000** | — | — |
 
-## Experiment Design
+**Key findings:**
 
-```
-UniProt / NCBI
-     │
-     ▼  fetch_sequences()
- 1500 real sequences
-     │
-     ▼  split_datasets()
-  D1 (500)  ────────────────────────────────┐
-  D2 (1000) ──► [k-mer vectors]             │
-             ──► [random-projection embed]  │
-                        │                  │
-                        ▼                  │
-              [NN Overlap]  ◄──────────────┘
-              [Coverage Sweep]
-              [Reconstruction Proxy]
-                        │
-                        ▼
-              Redundancy Score  →  plots + CSV
-```
+1. **Cluster-aware splitting confirms genuine barriers.** At sequence-identity level, random restrictions create real but imperfect information barriers (R = 0.062). The null model (R = 0.000) confirms this is genuine signal.
 
-### Step 1 — Data Download & Split
-- `--n-total 1500` sequences fetched (UniProt first, NCBI fallback)
-- Quality filtered: length 50–2 000 chars, valid amino-acid alphabet
-- 33% → D1, 67% → D2 (random, fixed seed)
+2. **ESM-2 reveals a 9.6× gap.** A protein language model adversary achieves 86% coverage of restricted sequences at cosine similarity ≥ 0.90. Screening thresholds calibrated on BLAST-style identity may underestimate AI-adversary reconstruction potential by roughly an order of magnitude.
 
-### Step 2 — Sequence Representation
-| Method | Description |
-|--------|-------------|
-| **K-mer frequency** | Sliding window (k=3), all 20^3 = 8000 features, L1-normalised |
-| **Random-projection embed** | K-mer vectors → 64-D via Johnson-Lindenstrauss projection |
+3. **Toxin proteins are more isolated.** Biosecurity-relevant toxin families score 56% lower than random proteins (R = 0.028 vs. 0.063) — sequence-level screening of toxin categories is creating stronger information barriers than a random-protein baseline would predict.
 
-### Step 3 — Redundancy Metrics
-| Metric | Formula |
-|--------|---------|
-| **NN Overlap** | For each D1 item cosine-similarity to its best match in D2 |
-| **Coverage @ τ** | % of D1 items with NN sim ≥ τ, for τ ∈ [0, 1] |
-| **Reconstruction MSE** | Weighted sum of 5-NN from D2; mean squared error |
-
-### Step 4 — Ablation
-Simulates "D1 is removed": all metrics computed with D2 only → quantifies retained information.
-
-### Step 5 — Redundancy Score
-```
-R = 0.5 × Coverage@0.90  +  0.5 × (1 − normalised_MSE)
-```
-- **R → 1**: D1 is fully covered by D2 → restricting D1 causes minimal capability loss  
-- **R → 0**: D1 is unique → its restriction is a genuine bottleneck
+**Recommendation:** Calibrate screening thresholds using protein language model embeddings (ESM-2 or equivalent), not BLAST identity. A policy that targets < 5% coverage at τ = 0.85 in embedding space provides a meaningful lower bound on AI-adversary-resistant restriction.
 
 ---
 
@@ -89,40 +41,50 @@ R = 0.5 × Coverage@0.90  +  0.5 × (1 − normalised_MSE)
 pip install -r requirements.txt
 ```
 
-Python ≥ 3.10 required. No additional authentication needed.
+Python ≥ 3.10. No GPU required for the core pipeline. ESM-2 evaluation requires `transformers` and `torch` (CPU-only, ~30s per 100 sequences).
 
 ---
 
-## Running the Pipeline
+## Running the pipeline
 
-### Quickstart (downloads & caches data automatically)
+### Quickstart (downloads and caches data automatically)
 ```bash
 python main.py
 ```
 
-### Custom options
+### Full options
 ```bash
 python main.py \
-  --source uniprot \     # or ncbi / auto
-  --n-total 2000 \       # sequences to download
-  --d1-fraction 0.4 \    # 40% → D1
-  --threshold 0.85 \     # coverage threshold
-  --force-dl             # ignore cache, re-download
+  --n-total 2000 \           # sequences to download
+  --split-mode cluster \     # cluster-aware split (default); or 'random'
+  --n-bootstrap 200 \        # bootstrap CI resamples
+  --toxin \                  # run toxin-protein experiment
+  --seed 42
 ```
 
-### All options
+### ESM-2 evaluation (separate script — ~30s per 100 seqs on CPU)
+```bash
+python run_esm2.py --n-total 2000 --esm2-subset 100 --n-bootstrap 50
+# Writes results/esm2_results.txt
 ```
---source       {uniprot,ncbi,auto}  Data source             [auto]
---n-total      INT                  Total seqs to download  [1500]
---d1-fraction  FLOAT                Fraction assigned D1    [0.33]
---min-len      INT                  Min sequence length     [50]
---max-len      INT                  Max sequence length     [2000]
---force-dl                          Ignore cache
--k             INT                  K-mer length            [3]
---embed-dim    INT                  Projection dimension    [64]
---threshold    FLOAT                Coverage threshold τ    [0.90]
---k-recon      INT                  Recon neighbours        [5]
---seed         INT                  Random seed             [42]
+
+### All flags (`main.py`)
+```
+--source          {uniprot,ncbi,auto}   Data source              [auto]
+--n-total         INT                   Total seqs to download   [2000]
+--split-mode      {random,cluster}      Split method             [cluster]
+--d1-fraction     FLOAT                 Fraction assigned D1     [0.33]
+--n-bootstrap     INT                   Bootstrap resamples      [200]
+--toxin                                 Run toxin experiment
+--no-esm2                               Skip ESM-2 (core pipeline)
+--esm2-subset     INT                   Max seqs for ESM-2       [150]
+--min-len         INT                   Min sequence length      [50]
+--max-len         INT                   Max sequence length      [2000]
+--force-dl                              Ignore cache, re-download
+-k                INT                   K-mer length             [3]
+--embed-dim       INT                   Projection dimension     [64]
+--threshold       FLOAT                 Coverage threshold τ     [0.90]
+--seed            INT                   Random seed              [42]
 ```
 
 ---
@@ -131,73 +93,96 @@ python main.py \
 
 | File | Description |
 |------|-------------|
-| `summary_table.csv` | All key metrics per representation method |
-| `similarity_histogram_k-mer.png` | NN similarity distribution (k-mer vectors) |
-| `similarity_histogram_embedding.png` | NN similarity distribution (projected embeddings) |
-| `coverage_vs_threshold.png` | Coverage vs τ sweep for both methods |
-| `ablation_comparison.png` | Bar chart: coverage / similarity / redundancy score |
-| `size_sensitivity.png` | Redundancy score vs D1 size (real data subsets) |
+| `summary_table.csv` | All metrics per method with CIs |
+| `representation_comparison.png` | Redundancy scores (mean ± 95% CI) by method |
+| `similarity_histogram_k_mer.png` | NN similarity distribution (k-mer) |
+| `similarity_histogram_embedding.png` | NN similarity distribution (embedding) |
+| `coverage_vs_threshold.png` | Coverage curve swept over τ ∈ [0, 1] |
+| `ablation_comparison.png` | Coverage / similarity / score bar chart |
+| `toxin_vs_random.png` | Toxin proteins vs random proteins |
+| `size_sensitivity.png` | Redundancy score vs D1 size |
+| `validation_sanity_check.png` | HIGH/LOW sanity check |
+| `esm2_results.txt` | ESM-2 metrics (from `run_esm2.py`) |
 
 ---
 
-## Interpreting Results
+## How DBA works
 
-| Redundancy Score | Interpretation |
-|-----------------|---------------|
-| > 0.75 | D1 is broadly redundant; restricting it has little impact |
-| 0.40–0.75 | D1 has partial unique content; some capability loss expected |
-| < 0.40 | D1 is a genuine bottleneck; restriction causes significant knowledge loss |
+```
+UniProt Swiss-Prot (real, public)
+         │
+         ▼  fetch_sequences() — cached FASTA
+    1,929 sequences (quality filtered)
+         │
+         ▼  cluster_aware_split()
+         │   TruncatedSVD (100 dim) → MiniBatchKMeans (150 clusters)
+         │   Whole clusters → D1 (33%) or D2 (67%)
+    ┌────┴────┐
+   D1 (637)  D2 (1,292)
+    │          │
+    ▼          ▼
+  k-mer vectors (8,000 dim, L1-norm)
+  random projection (64 dim)
+  ESM-2 embeddings (320 dim, optional)
+         │
+         ▼  redundancy_analysis
+  NN overlap · coverage curve · reconstruction error
+  bootstrap CIs (n=200) · null model · Wilcoxon test
+         │
+         ▼
+  Redundancy Score R ∈ [0,1]  →  plots + CSV
+```
+
+### Redundancy score formula
+
+```
+R = 0.5 × Coverage@τ  +  0.5 × (1 − norm_MSE)
+
+norm_MSE = MSE(x, x̂_NN) / MSE(x, x̂_random)
+```
+
+- **R → 1**: D1 broadly redundant in D2; restriction creates minimal barrier  
+- **R → 0**: D1 genuinely unique; restriction is a real information bottleneck
 
 ---
 
-## Safety & Ethics
+## Interpreting results
 
-- All sequences come from UniProt Swiss-Prot (reviewed proteins) or NCBI RefSeq
-- No pathogen-specific queries are made; queries use `reviewed:true` (Swiss-Prot)
-- Analysis is purely statistical — no sequences are reconstructed or synthesised
-- No biological capability is demonstrated or transferred
+| R value | Interpretation |
+|---------|---------------|
+| > 0.65 | AI-adversary can reconstruct most of D1; tighter restriction or embedding-aware policy needed |
+| 0.15–0.65 | Partial barrier; sequence-identity screening partially effective but embedding gap present |
+| < 0.15 | Strong information barrier at sequence level; verify with ESM-2 to check embedding gap |
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 DBA/
-├── main.py                     ← pipeline orchestrator
+├── main.py                      ← pipeline orchestrator (cluster split, bootstrap, toxin)
+├── run_esm2.py                  ← standalone ESM-2 experiment
 ├── requirements.txt
 ├── README.md
-├── data/                       ← cached FASTA files (created on first run)
-│   └── uniprot_1500.fasta
+├── report_draft.md              ← full technical report with figures
+├── data/                        ← cached FASTA files
 ├── src/
-│   ├── __init__.py
-│   ├── data_loader.py          ← UniProt/NCBI download, cache, split
-│   ├── representation.py       ← k-mer vectors + random projection
-│   ├── redundancy_analysis.py  ← NN overlap, coverage, reconstruction
-│   └── visualisation.py        ← plots + CSV export
-└── results/                    ← generated output (created on run)
-    ├── summary_table.csv
-    ├── similarity_histogram_*.png
-    ├── coverage_vs_threshold.png
-    ├── ablation_comparison.png
-    └── size_sensitivity.png
+│   ├── data_loader.py           ← UniProt/NCBI download, cache, toxin query
+│   ├── clustering.py            ← cluster-aware split (SVD + MiniBatchKMeans)
+│   ├── representation.py        ← k-mer, random projection, ESM-2
+│   ├── redundancy_analysis.py   ← metrics, bootstrap CI, null model, Wilcoxon
+│   ├── esm_encoder.py           ← ESM-2 lazy loader (CPU, graceful fallback)
+│   └── visualisation.py         ← all plots + CSV export
+└── results/                     ← generated output
 ```
 
 ---
 
-## Extending to Larger Datasets
+## Safety & ethics
 
-```python
-# Use your own FASTA file
-from src.data_loader import _parse_fasta, _filter_sequences, split_datasets
+- All sequences from UniProt Swiss-Prot (reviewed, public) or NCBI RefSeq
+- No Select Agent sequences; toxin experiment uses public Swiss-Prot annotations only
+- Analysis is purely statistical — no sequences are reconstructed or synthesised
+- Tool is designed for defensive audit use by screening programme designers
 
-with open("my_sequences.fasta") as f:
-    records = _parse_fasta(f.read())
-records = _filter_sequences(records)
-d1, d2 = split_datasets(records, d1_fraction=0.33)
-```
-
-For protein embeddings (ESM-2), replace `build_representations()`:
-```bash
-pip install transformers torch
-# Use: facebook/esm2_t6_8M_UR50D via HuggingFace
-```
+Full dual-use discussion in Appendix A of `report_draft.md`.

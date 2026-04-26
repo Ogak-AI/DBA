@@ -1,0 +1,19 @@
+
+Loading sequences ...
+Computing k-mer vectors and splitting ...
+
+Encoding 100 D1 + 100 D2 sequences with ESM-2 ...
+ESM-2 encoding: 30.6s
+
+Computing ESM-2 redundancy metrics ...
+
+Computing k-mer metrics on same subset ...
+
+============================================================
+  K-mer  R = 0.0692  [95% CI: 0.0622 – 0.0770]
+  ESM-2  R = 0.6643  [95% CI: 0.6243 – 0.6984]
+  Ratio ESM-2/k-mer: 9.60x
+  Wilcoxon K-mer vs ESM-2: p = 3.90e-18
+============================================================
+
+Saved: results/esm2_results.txt
