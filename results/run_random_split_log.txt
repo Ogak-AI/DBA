@@ -3,3 +3,107 @@
 12:24:26  INFO       [timer] download: 0.1s
 12:24:26  INFO     Split: D1=1598 sequences, D2=3246 sequences (33%/67%)
 12:24:33  INFO       [timer] represent: 1.9s
+12:27:05  INFO       [timer] analyse_K-mer: 152.3s
+12:27:12  INFO       [timer] analyse_Embedding: 6.3s
+
+  ============================================================
+  Dataset Bottleneck Analysis  —  Biosecurity Prototype
+  Real sequences: UniProt Swiss-Prot / NCBI
+  ============================================================
+
+==============================================================
+STAGE 1 - Real Data Download & Split
+==============================================================
+  Source          : auto
+  Split mode      : random
+  Total sequences : 4,844
+  D1 (restricted) : 1,598 sequences
+  D2 (reference)  : 3,246 sequences
+  Detected type   : PROTEIN
+  Length range    : 51-1988 chars
+  Mean length     : 543 chars
+  Download time   : 0.1s
+
+==============================================================
+VALIDATION - Metric Sanity Check
+==============================================================
+  HIGH (D1 subset of D2) : R = 0.9173  (expect ~1.0)
+  LOW  (D1 disjoint D2)  : R = 0.0931  (expect ~0.0)
+  Sanity check PASSED: HIGH > LOW = True
+  Saved: results\validation_sanity_check.png
+
+==============================================================
+STAGE 2 - Building Representations
+==============================================================
+  K-mer (k=3) feature dim : 8,000
+  Projection embedding dim : 64
+  Representation time      : 1.9s
+
+==============================================================
+STAGE 3+4 - Redundancy Analysis
+==============================================================
+
+  [K-mer]
+    Coverage @ t=0.90  : 0.69%
+    Mean NN similarity    : 0.2844 +/- 0.1489
+    Mean recon MSE        : 4.02e-07  (baseline 5.05e-07)
+    Norm. MSE             : 0.7962
+    Redundancy Score      : 0.1053
+    Bootstrap CI (n=50) ...
+    R = 0.1054  [95% CI: 0.0968 – 0.1139]
+    Null model R          : 0.0016  (real - null = +0.1039)
+
+  [Embedding]
+    Coverage @ t=0.90  : 0.75%
+    Mean NN similarity    : 0.5169 +/- 0.0813
+    Mean recon MSE        : 2.56e-07  (baseline 5.04e-07)
+    Norm. MSE             : 0.5070
+    Redundancy Score      : 0.2502
+    Bootstrap CI (n=50) ...
+    R = 0.2491  [95% CI: 0.2426 – 0.2558]
+    Null model R          : 0.2439  (real - null = +0.0052)
+
+  [Held-out stability check]
+    Full D1 R             : 0.1053
+    Held-out 10% D1 R     : 0.0963  (delta = 0.0090)
+
+  [Wilcoxon test: K-mer vs Embedding]
+    n = 1598, stat = 5145.0, p = 0.00e+00
+
+==============================================================
+STAGE 5 - Outputs
+==============================================================
+  Saved: results\similarity_histogram_k_mer.png
+  Saved: results\similarity_histogram_embedding.png
+  Saved: results\coverage_vs_threshold.png
+  Saved: results\ablation_comparison.png
+  Saved: results\representation_comparison.png
+
+  [Size sensitivity] ...
+     D1=  10  kmer=0.053  embed=0.107
+     D1=  20  kmer=0.087  embed=0.169
+     D1= 177  kmer=0.082  embed=0.196
+     D1= 354  kmer=0.083  embed=0.208
+     D1= 531  kmer=0.096  embed=0.225
+     D1= 708  kmer=0.095  embed=0.229
+     D1= 885  kmer=0.095  embed=0.235
+     D1=1062  kmer=0.106  embed=0.245
+     D1=1239  kmer=0.089  embed=0.238
+     D1=1416  kmer=0.101  embed=0.249
+     D1=1593  kmer=0.099  embed=0.246
+     D1=1598  kmer=0.101  embed=0.248
+  Saved: results\size_sensitivity.png
+
+  -- Summary Table --
+   Method  D1 Size  D2 Size  Coverage @ t=0.90 (%)  Mean NN Similarity  Std NN Similarity  Mean Recon MSE  Baseline MSE  Normalised MSE  Redundancy Score
+    K-mer     1598     3246                   0.69              0.2844             0.1489             0.0      0.000001          0.7962            0.1053
+Embedding     1598     3246                   0.75              0.5169             0.0813             0.0      0.000001          0.5070            0.2502
+
+  Saved: results/summary_table.csv
+
+  -- Timing Benchmarks --
+    Download          : 0.1s
+
+Done. Total pipeline time: 192.5s
+  All outputs in ./results/
+
